@@ -1,7 +1,16 @@
 import { SignUpController } from './signup'
 import { MissingParamError, InvalidParamError, ServerError } from '../../errors'
-import { EmailValidator, AccountModel, AddAccount, AddAccountModel, HttpRequest } from '../signup/signup-protocols'
+import { EmailValidator, AccountModel, AddAccount, AddAccountModel, HttpRequest, Validation } from '../signup/signup-protocols'
 import { ok, serverError, badRequest } from '../../helpers/http-helper'
+
+const makeValidation = (): Validation => {
+    class ValidationStub implements Validation {
+        validate (input: any): Error {
+            return null
+        }
+    }
+    return new ValidationStub()
+}
 
 const makeFakeRequest = (): HttpRequest => ({
     body: {
@@ -40,17 +49,20 @@ const makeAddAccount = (): AddAccount => {
 interface SutTypes {
     sut: SignUpController,
     emailValidatorStub: EmailValidator,
-    addAccountStub: AddAccount
+    addAccountStub: AddAccount,
+    validationStub: Validation
 }
 
 const makeSut = (): SutTypes => {
     const emailValidatorStub = makeEmailValidator()
     const addAccountStub = makeAddAccount()
-    const sut = new SignUpController(emailValidatorStub, addAccountStub)
+    const validationStub  = makeValidation()
+    const sut = new SignUpController(emailValidatorStub, addAccountStub, validationStub)
     return {
         emailValidatorStub,
         sut,
-        addAccountStub
+        addAccountStub,
+        validationStub
     }
 }
 
@@ -170,6 +182,14 @@ describe('Signup Controller', () => {
         const { sut } = makeSut()
         const httpResponse = await sut.handle(makeFakeRequest())
         expect(httpResponse).toEqual(ok(makeFakeAccount()))
+    })
+
+    test('Should call Validation with correct value' , async () => {
+        const { sut, validationStub } = makeSut()
+        const validateSpy = jest.spyOn(validationStub, 'validate')
+        const httpRequest = makeFakeRequest()
+        await sut.handle(httpRequest)
+        expect(validateSpy).toHaveBeenCalledWith(httpRequest.body)
     })
 })
 
