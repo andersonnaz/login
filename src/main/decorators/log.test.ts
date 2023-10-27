@@ -1,4 +1,4 @@
-import { serverError, ok } from "../../application/helpers/http-helper";
+import { serverError, ok } from "../../application/helpers/http/http-helper";
 import { Controller, HttpRequest, HttpResponse } from "../../application/protocols";
 import { LogErrorRepository } from "../../data/protocols/log-error-repository";
 import { AccountModel } from "../../domain/models/account";
